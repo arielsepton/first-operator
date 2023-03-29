@@ -1,0 +1,31 @@
+# permissions for end users to edit myfirstoperaters.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: myfirstoperater-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: operator
+    app.kubernetes.io/part-of: operator
+    app.kubernetes.io/managed-by: kustomize
+  name: myfirstoperater-editor-role
+rules:
+- apiGroups:
+  - cache.my.domain
+  resources:
+  - myfirstoperaters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cache.my.domain
+  resources:
+  - myfirstoperaters/status
+  verbs:
+  - get
