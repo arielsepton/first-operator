@@ -11,8 +11,8 @@ metadata:
 spec:
   # TODO(user): Add fields here
   start: 5
-  end: 10
+  end: 20
   replicas: 5
   deployments: 
-  - name: abc
+  - name: nginx
     namespace: default

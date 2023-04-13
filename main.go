@@ -24,17 +24,26 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	"crypto/tls"
+	"net/http"
+
+	apiv1alpha1 "github.com/arielsepton/first-operator/api/v1alpha1"
+	"github.com/arielsepton/first-operator/controllers"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	apiv1alpha1 "github.com/arielsepton/first-operator/api/v1alpha1"
-	"github.com/arielsepton/first-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
+
+func DisableTLSVerification() {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	http.DefaultTransport = tr
+}
 
 var (
 	scheme   = runtime.NewScheme()
@@ -49,6 +58,8 @@ func init() {
 }
 
 func main() {
+	DisableTLSVerification()
+
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
