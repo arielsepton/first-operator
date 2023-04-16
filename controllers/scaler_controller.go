@@ -18,8 +18,12 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -50,6 +54,44 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	_ = log.FromContext(ctx)
 	// TODO(user): your logic here
 
+	scaler := &apiv1alpha1.Scaler{}
+	err := r.Get(ctx, req.NamespacedName, scaler)
+	if err != nil {
+		return ctrl.Result{}, nil
+	}
+
+	startTime := scaler.Spec.Start
+	endTime := scaler.Spec.End
+	replicas := scaler.Spec.Replicas
+
+	currentHour := time.Now().UTC().Hour()
+
+	log.Log.Info(fmt.Sprintf("currentHour %d", currentHour))
+	if currentHour >= startTime && currentHour <= endTime {
+		log.Log.Info("in if")
+
+		for _, dep := range scaler.Spec.Deployments {
+			deployment := &v1.Deployment{}
+			err := r.Get(ctx, types.NamespacedName{
+				Namespace: dep.Namespace,
+				Name:      dep.Name,
+			},
+				deployment,
+			)
+
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+
+			if deployment.Spec.Replicas != &replicas {
+				deployment.Spec.Replicas = &replicas
+				err := r.Update(ctx, deployment)
+				if err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+		}
+	}
 	return ctrl.Result{}, nil
 }
 
