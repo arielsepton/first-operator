@@ -1,0 +1,3 @@
+# values.yaml
+replicaCount: 5
+hourToScale: 12

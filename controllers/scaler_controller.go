@@ -71,6 +71,8 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		log.Log.Info("in if")
 
 		for _, dep := range scaler.Spec.Deployments {
+			log.Log.Info("in for")
+
 			deployment := &v1.Deployment{}
 			err := r.Get(ctx, types.NamespacedName{
 				Namespace: dep.Namespace,
@@ -82,6 +84,9 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			if err != nil {
 				return ctrl.Result{}, err
 			}
+
+			log.Log.Info(fmt.Sprintf("currentreplicas %d", deployment.Spec.Replicas))
+			log.Log.Info(fmt.Sprintf("morereplicas %d", &replicas))
 
 			if deployment.Spec.Replicas != &replicas {
 				deployment.Spec.Replicas = &replicas

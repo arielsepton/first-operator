@@ -1,0 +1,21 @@
+# templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-operator
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: my-operator
+  template:
+    metadata:
+      labels:
+        app: my-operator
+    spec:
+      containers:
+        - name: my-operator
+          image: ghcr.io/arielsepton/scaler-operator:v0.0.1
+          env:
+            - name: HOUR_TO_SCALE
+              value: "{{ .Values.hourToScale }}"

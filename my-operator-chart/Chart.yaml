@@ -1,0 +1,5 @@
+# Chart.yaml
+apiVersion: v2
+name: my-operator
+description: A Helm chart for deploying my-operator
+version: 0.1.0
