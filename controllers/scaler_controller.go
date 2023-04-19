@@ -68,36 +68,52 @@ func (r *ScalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	log.Log.Info(fmt.Sprintf("currentHour %d", currentHour))
 	if currentHour >= startTime && currentHour <= endTime {
-		log.Log.Info("in if")
-
-		for _, dep := range scaler.Spec.Deployments {
-			log.Log.Info("in for")
-
-			deployment := &v1.Deployment{}
-			err := r.Get(ctx, types.NamespacedName{
-				Namespace: dep.Namespace,
-				Name:      dep.Name,
-			},
-				deployment,
-			)
-
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-
-			log.Log.Info(fmt.Sprintf("currentreplicas %d", deployment.Spec.Replicas))
-			log.Log.Info(fmt.Sprintf("morereplicas %d", &replicas))
-
-			if deployment.Spec.Replicas != &replicas {
-				deployment.Spec.Replicas = &replicas
-				err := r.Update(ctx, deployment)
-				if err != nil {
-					return ctrl.Result{}, err
-				}
-			}
+		if err = ScaleDeployment(r, scaler, ctx, replicas); err != nil {
+			return ctrl.Result{}, err
 		}
 	}
 	return ctrl.Result{}, nil
+}
+
+// Scale the deployment.
+func ScaleDeployment(r *ScalerReconciler, scaler *apiv1alpha1.Scaler, ctx context.Context, replicas int32) error {
+	log.Log.Info("in scaleDeployment")
+
+	for _, dep := range scaler.Spec.Deployments {
+		log.Log.Info("in for")
+
+		deployment := &v1.Deployment{}
+		err := r.Get(ctx, types.NamespacedName{
+			Namespace: dep.Namespace,
+			Name:      dep.Name,
+		},
+			deployment,
+		)
+
+		if err != nil {
+			return err
+		}
+
+		log.Log.Info(fmt.Sprintf("currentreplicas %d", deployment.Spec.Replicas))
+		log.Log.Info(fmt.Sprintf("morereplicas %d", &replicas))
+
+		if deployment.Spec.Replicas != &replicas {
+			deployment.Spec.Replicas = &replicas
+			err := r.Update(ctx, deployment)
+			if err != nil {
+				scaler.Status.Status = apiv1alpha1.FAILD
+				return err
+			}
+
+			scaler.Status.Status = apiv1alpha1.SUCCESS
+			err = r.Status().Update(ctx, scaler)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
