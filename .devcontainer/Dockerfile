@@ -88,6 +88,10 @@ RUN apt-get update \
     && chmod +x ./kubectl \
     && sudo mv ./kubectl /usr/local/bin/kubectl \
     #
+    # Install Kustomize
+    && curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash \
+    && sudo mv kustomize /usr/local/bin \
+    #
     # Install Helm
     && curl -s https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash - \
     #
