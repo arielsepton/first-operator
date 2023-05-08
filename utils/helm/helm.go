@@ -2,7 +2,10 @@ package helm
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
+
+	"gopkg.in/yaml.v3"
 
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
@@ -44,17 +47,32 @@ func InstallChart(releaseNamespace string, releaseName string, chart *chart.Char
 	Client.Namespace = releaseNamespace
 	Client.ReleaseName = releaseName
 
-	rel, err := Client.Run(chart, nil)
+	// rel, err := Client.Run(chart, nil)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// log.Log.Info(fmt.Sprintln("Successfully installed release: ", rel.Name))
+
+	// valuesFile, err := ioutil.ReadFile("values.yaml")
+	// if err != nil {
+	// 	return err
+	// }
+
+	m, err := yamlToMap("values.yaml")
 	if err != nil {
 		return err
 	}
 
+	log.Log.Info(fmt.Sprintln("values: ", m))
+
+	rel, err := Client.Run(chart, m)
+	if err != nil {
+		log.Log.Info(fmt.Sprintln("err: ", err))
+		return err
+	}
+
 	log.Log.Info(fmt.Sprintln("Successfully installed release: ", rel.Name))
-
-	// if err = runOperation(chart, Client); err != nil {
-	// 	return err
-	// }
-
 	return nil
 }
 
@@ -75,22 +93,23 @@ func UninstallChart(releaseNamespace string, releaseName string, chart *chart.Ch
 	return nil
 }
 
-func UpgradeChart(releaseNamespace string, releaseName string, chart *chart.Chart) error {
-	actionConfig, err := GetActionConfig(releaseNamespace, releaseName)
-	if err != nil {
-		return err
-	}
+// func UpgradeChart(releaseNamespace string, releaseName string, chart *chart.Chart) error {
+// 	actionConfig, err := GetActionConfig(releaseNamespace, releaseName)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	Client := action.NewUpgrade(actionConfig)
-	rel, err := Client.Run(releaseName)
-	if err != nil {
-		return err
-	}
+// 	Client := action.NewUpgrade(actionConfig)
+// 	rel, err := Client.Run(releaseName)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	log.Log.Info(fmt.Sprintln("Successfully uninstalled release: ", rel.Release.Name))
+// 	log.Log.Info(fmt.Sprintln("Successfully uninstalled release: ", rel.Release.Name))
 
-	return nil
-}
+// 	return nil
+// }
+
 // func runOperation(chart *chart.Chart, client *action.Install) error {
 // 	rel, err := client.Run(chart, nil)
 // 	if err != nil {
@@ -111,4 +130,20 @@ func RunOperation(operation string, releaseNamespace string, releaseName string,
 	}
 
 	return nil
+}
+
+func yamlToMap(yamlFilePath string) (map[string]interface{}, error) {
+	// Read the YAML file into a byte slice
+	yamlData, err := ioutil.ReadFile(yamlFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the YAML data into a map[string]interface{}
+	var m map[string]interface{}
+	if err := yaml.Unmarshal(yamlData, &m); err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }
