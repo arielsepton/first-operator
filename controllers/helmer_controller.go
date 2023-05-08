@@ -20,10 +20,14 @@ import (
 	"context"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/arielsepton/first-operator/utils/helm"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	apiv1alpha1 "github.com/arielsepton/first-operator/api/v1alpha1"
@@ -74,7 +78,53 @@ func (r *HelmerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
+	if err = updateCR(r, ctx); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{}, nil
+}
+
+func updateCR(r *HelmerReconciler, ctx context.Context) error {
+	cr := &unstructured.Unstructured{}
+	cr.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "my.domain",
+		Version: "v1alpha1",
+		Kind:    "Helmer",
+	})
+
+	cr.SetNamespace("default") // set the namespace of the CR if needed
+	cr.SetName("helmer-sample")
+
+	err := r.Get(ctx, types.NamespacedName{Name: "helmer-sample", Namespace: "default"}, cr)
+	if err != nil {
+		return err
+	}
+
+	spec, _, err := unstructured.NestedFieldNoCopy(cr.Object, "spec")
+	if err != nil {
+		return err
+	}
+
+	dataSpec, ok := spec.(map[string]interface{})
+	if !ok {
+		return err
+	}
+
+	// Update a specific value
+	dataSpec["operation"] = "done"
+
+	// // set the updated spec map back to the resource
+	err = unstructured.SetNestedField(cr.Object, spec, "spec")
+	if err != nil {
+		return err
+	}
+
+	r.Update(ctx, cr)
+
+	log.Log.Info(fmt.Sprintln("Hello this is done"))
+
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

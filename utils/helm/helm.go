@@ -52,21 +52,12 @@ func InstallChart(releaseNamespace string, releaseName string, chart *chart.Char
 	// 	return err
 	// }
 
-	// log.Log.Info(fmt.Sprintln("Successfully installed release: ", rel.Name))
-
-	// valuesFile, err := ioutil.ReadFile("values.yaml")
-	// if err != nil {
-	// 	return err
-	// }
-
-	m, err := yamlToMap("values.yaml")
+	values, err := yamlToMap("values.yaml")
 	if err != nil {
 		return err
 	}
 
-	log.Log.Info(fmt.Sprintln("values: ", m))
-
-	rel, err := Client.Run(chart, m)
+	rel, err := Client.Run(chart, values)
 	if err != nil {
 		log.Log.Info(fmt.Sprintln("err: ", err))
 		return err
@@ -76,7 +67,7 @@ func InstallChart(releaseNamespace string, releaseName string, chart *chart.Char
 	return nil
 }
 
-func UninstallChart(releaseNamespace string, releaseName string, chart *chart.Chart) error {
+func UninstallChart(releaseNamespace string, releaseName string) error {
 	actionConfig, err := GetActionConfig(releaseNamespace, releaseName)
 	if err != nil {
 		return err
@@ -93,40 +84,46 @@ func UninstallChart(releaseNamespace string, releaseName string, chart *chart.Ch
 	return nil
 }
 
-// func UpgradeChart(releaseNamespace string, releaseName string, chart *chart.Chart) error {
-// 	actionConfig, err := GetActionConfig(releaseNamespace, releaseName)
-// 	if err != nil {
-// 		return err
-// 	}
+func UpgradeChart(releaseNamespace string, releaseName string, chart *chart.Chart) error {
+	actionConfig, err := GetActionConfig(releaseNamespace, releaseName)
+	if err != nil {
+		return err
+	}
 
-// 	Client := action.NewUpgrade(actionConfig)
-// 	rel, err := Client.Run(releaseName)
-// 	if err != nil {
-// 		return err
-// 	}
+	values, err := yamlToMap("values.yaml")
+	if err != nil {
+		return err
+	}
 
-// 	log.Log.Info(fmt.Sprintln("Successfully uninstalled release: ", rel.Release.Name))
+	Client := action.NewUpgrade(actionConfig)
+	rel, err := Client.Run(releaseName, chart, values)
+	if err != nil {
+		return err
+	}
 
-// 	return nil
-// }
+	log.Log.Info(fmt.Sprintln("Successfully upgraded release: ", rel.Name))
 
-// func runOperation(chart *chart.Chart, client *action.Install) error {
-// 	rel, err := client.Run(chart, nil)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	log.Log.Info(fmt.Sprintln("Successfully operation on release: ", rel.Name))
-// 	return nil
-// }
+	return nil
+}
 
 func RunOperation(operation string, releaseNamespace string, releaseName string, chart *chart.Chart) error {
 	if operation == "install" {
 		InstallChart(releaseNamespace, releaseName, chart)
+		// updateCR()
 	}
 
 	if operation == "uninstall" {
-		UninstallChart(releaseNamespace, releaseName, chart)
+		UninstallChart(releaseNamespace, releaseName)
+		// updateCR()
+	}
+
+	if operation == "upgrade" {
+		UpgradeChart(releaseNamespace, releaseName, chart)
+		// updateCR()
+	}
+
+	if operation == "done" {
+		log.Log.Info(fmt.Sprintln("Successfully done!"))
 	}
 
 	return nil
@@ -147,3 +144,35 @@ func yamlToMap(yamlFilePath string) (map[string]interface{}, error) {
 
 	return m, nil
 }
+
+// func updateCR() error {
+// 	log.Log.Info(fmt.Sprintln("In update CR"))
+
+// 	cr := &unstructured.Unstructured{}
+// 	cr.SetGroupVersionKind(schema.GroupVersionKind{
+// 		Group: "my.domain",
+// 		Version: "v1alpha1",
+// 		Kind:    "Helmer",
+// 	})
+
+// 	err := client.Client.Get(context.TODO(), types.NamespacedName{Name: "helmer-sample", Namespace: "default"}, cr)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	spec := cr.Spec
+// 	log.Log.Info(fmt.Sprintln("spec: ", spec))
+
+// 	spec.operation = "done"
+// 	log.Log.Info(fmt.Sprintln("spec: ", spec))
+
+// 	cr.Spec = spec
+
+// 	err = client.Client.Update(context.TODO(), cr)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	log.Log.Info(fmt.Sprintln("CR updated successfully"))
+// 	return nil
+// }
