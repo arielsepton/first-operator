@@ -19,13 +19,8 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"os"
 
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/chart"
-	"helm.sh/helm/v3/pkg/chart/loader"
-	"helm.sh/helm/v3/pkg/kube"
-
+	"github.com/arielsepton/first-operator/utils/helm"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -68,57 +63,18 @@ func (r *HelmerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	operation := helmer.Spec.Operation
 
 	log.Log.Info(fmt.Sprintln("Hello this is the chart: ", chartPath))
+	log.Log.Info(fmt.Sprintln("Hello this is the operation: ", operation))
 
-	chart, err := loader.Load(chartPath)
+	chart, err := helm.GetChart(chartPath)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	Client, err := getClient(releaseNamespace, releaseName)
-	if err != nil {
+	if err = helm.RunOperation(operation, releaseNamespace, releaseName, chart); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	rel, err := Client.Run(chart, nil)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	log.Log.Info(fmt.Sprintln("Successfully installed release: ", rel.Name))
 	return ctrl.Result{}, nil
-}
-
-func getChart(path string) (*chart.Chart, error) {
-	// client := action.NewInstall(&action.Configuration{})
-	// settings := cli.New()
-	// cp, err := client.ChartPathOptions.LocateChart(path, settings)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	chart, err := loader.Load(path)
-	if err != nil {
-		return nil, err
-	}
-
-	return chart, nil
-}
-
-func getClient(releaseNamespace string, releaseName string) (*action.Install, error) {
-	kubeconfigPath := "/root/.kube/config"
-
-	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(kube.GetConfig(kubeconfigPath, "", releaseNamespace), releaseNamespace, os.Getenv("HELM_DRIVER"), func(format string, v ...interface{}) {
-		log.Log.Info(fmt.Sprintf(format, v))
-	}); err != nil {
-		return nil, err
-	}
-
-	Client := action.NewInstall(actionConfig)
-	Client.Namespace = releaseNamespace
-	Client.ReleaseName = releaseName
-
-	return Client, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
