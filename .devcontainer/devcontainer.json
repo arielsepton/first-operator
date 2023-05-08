@@ -9,11 +9,6 @@
 		// and USER_GID in .devcontainer/Dockerfile to match your user if not 1000.
 		// "-u", "vscode",
 		"--network", "minikube",
-		// Mount go mod cache
-		"-v", "keda-gomodcache:/go/pkg",
-		// Cache vscode exentsions installs and homedir
-		"-v", "keda-vscodecache:/root/.vscode-server",
-
 		// Mount docker socket for docker builds
 		"-v", "/var/run/docker.sock:/var/run/docker.sock",
 

@@ -32,6 +32,7 @@ RUN apt-get update \
     #
     # Install Go tools
     && go get -u -v \
+        github.com/helm/helm/v3/pkg \
         github.com/mdempsky/gocode \
         github.com/uudashr/gopkgs/cmd/gopkgs \
         github.com/ramya-rao-a/go-outline \

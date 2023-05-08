@@ -1,0 +1,58 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.10.0
+  creationTimestamp: null
+  name: helmers.my.domain
+spec:
+  group: my.domain
+  names:
+    kind: Helmer
+    listKind: HelmerList
+    plural: helmers
+    singular: helmer
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Helmer is the Schema for the helmers API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: HelmerSpec defines the desired state of Helmer
+            properties:
+              chart:
+                description: Foo is an example field of Helmer. Edit helmer_types.go
+                  to remove/update
+                type: string
+              operation:
+                type: string
+              releaseName:
+                type: string
+            required:
+            - chart
+            - operation
+            - releaseName
+            type: object
+          status:
+            description: HelmerStatus defines the observed state of Helmer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

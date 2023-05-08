@@ -1,0 +1,13 @@
+apiVersion: my.domain/v1alpha1
+kind: Helmer
+metadata:
+  labels:
+    app.kubernetes.io/name: helmer
+    app.kubernetes.io/instance: helmer-sample
+    app.kubernetes.io/part-of: operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: operator
+  name: helmer-sample
+spec:
+  chart: hello
+  # TODO(user): Add fields here
