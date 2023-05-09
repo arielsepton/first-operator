@@ -71,14 +71,21 @@ func (r *HelmerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	chart, err := helm.GetChart(chartPath)
 	if err != nil {
+		// helmer.Status.Status = apiv1alpha1.FAILED
 		return ctrl.Result{}, err
 	}
 
 	if err = helm.RunOperation(operation, releaseNamespace, releaseName, chart); err != nil {
+		// helmer.Status.Status = apiv1alpha1.FAILED
 		return ctrl.Result{}, err
 	}
 
 	if err = updateCR(r, ctx); err != nil {
+		// helmer.Status.Status = apiv1alpha1.FAILED
+		return ctrl.Result{}, err
+	}
+
+	if err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -114,7 +121,7 @@ func updateCR(r *HelmerReconciler, ctx context.Context) error {
 	// Update a specific value
 	dataSpec["operation"] = "done"
 
-	// // set the updated spec map back to the resource
+	// set the updated spec map back to the resource
 	err = unstructured.SetNestedField(cr.Object, spec, "spec")
 	if err != nil {
 		return err

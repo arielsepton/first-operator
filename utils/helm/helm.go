@@ -109,17 +109,14 @@ func UpgradeChart(releaseNamespace string, releaseName string, chart *chart.Char
 func RunOperation(operation string, releaseNamespace string, releaseName string, chart *chart.Chart) error {
 	if operation == "install" {
 		InstallChart(releaseNamespace, releaseName, chart)
-		// updateCR()
 	}
 
 	if operation == "uninstall" {
 		UninstallChart(releaseNamespace, releaseName)
-		// updateCR()
 	}
 
 	if operation == "upgrade" {
 		UpgradeChart(releaseNamespace, releaseName, chart)
-		// updateCR()
 	}
 
 	if operation == "done" {
