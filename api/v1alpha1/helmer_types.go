@@ -44,6 +44,7 @@ type HelmerStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Status string `json:"status,omitempty"`
+	Error  string `json:"error,omitempty"`
 }
 
 //+kubebuilder:object:root=true

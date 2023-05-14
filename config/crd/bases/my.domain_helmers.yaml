@@ -51,6 +51,8 @@ spec:
           status:
             description: HelmerStatus defines the observed state of Helmer
             properties:
+              error:
+                type: string
               status:
                 description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
                   of cluster Important: Run "make" to regenerate code after modifying

@@ -66,33 +66,78 @@ func (r *HelmerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	releaseName := helmer.Spec.ReleaseName
 	operation := helmer.Spec.Operation
 
-	log.Log.Info(fmt.Sprintln("Hello this is the chart: ", chartPath))
-	log.Log.Info(fmt.Sprintln("Hello this is the operation: ", operation))
+	if operation != "done" {
+		log.Log.Info(fmt.Sprintln("Hello this is the chart: ", chartPath))
+		log.Log.Info(fmt.Sprintln("Hello this is the operation: ", operation))
 
-	chart, err := helm.GetChart(chartPath)
-	if err != nil {
-		// helmer.Status.Status = apiv1alpha1.FAILED
-		return ctrl.Result{}, err
-	}
+		chart, err := helm.GetChart(chartPath)
+		if err != nil {
+			log.Log.Info(fmt.Sprintln("Hello this is the func: ", "GetChart"))
+			updateCRStatusFAIL(r, ctx, req, err)
+			return ctrl.Result{}, err
+		}
 
-	if err = helm.RunOperation(operation, releaseNamespace, releaseName, chart); err != nil {
-		// helmer.Status.Status = apiv1alpha1.FAILED
-		return ctrl.Result{}, err
-	}
+		if err = helm.RunOperation(operation, releaseNamespace, releaseName, chart); err != nil {
+			log.Log.Info(fmt.Sprintln("Hello this is the func: ", "RunOperation"))
+			updateCRStatusFAIL(r, ctx, req, err)
+			return ctrl.Result{}, err
+		}
 
-	if err = updateCR(r, ctx); err != nil {
-		// helmer.Status.Status = apiv1alpha1.FAILED
-		return ctrl.Result{}, err
-	}
+		if err = updateCRField(r, ctx, "operation"); err != nil {
+			log.Log.Info(fmt.Sprintln("Hello this is the func: ", "updateCRField"))
+			updateCRStatusFAIL(r, ctx, req, err)
+			return ctrl.Result{}, err
+		}
 
-	if err != nil {
-		return ctrl.Result{}, err
+		err = updateCRStatusSUCCESS(r, ctx, req)
+		if err != nil {
+			log.Log.Info(fmt.Sprintln("Hello this is the err: ", err))
+		}
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func updateCR(r *HelmerReconciler, ctx context.Context) error {
+func updateCRStatusSUCCESS(r *HelmerReconciler, ctx context.Context, req ctrl.Request) error {
+	helmer := &apiv1alpha1.Helmer{}
+	err := r.Get(ctx, req.NamespacedName, helmer)
+	if err != nil {
+		return err
+	}
+
+	status := apiv1alpha1.HelmerStatus{}
+	status.Status = apiv1alpha1.SUCCESS
+	status.Error = ""
+
+	helmer.Status = status
+	err = r.Status().Update(ctx, helmer)
+	if err != nil {
+		log.Log.Info(fmt.Sprintln("Hello this is the error on update: ", err))
+
+		return err
+	}
+
+	log.Log.Info(fmt.Sprintln("Hello this is the status: ", helmer.Status.Status))
+
+	// try
+	r.Get(ctx, req.NamespacedName, helmer)
+	log.Log.Info(fmt.Sprintln("Hello this is the status: ", helmer.Status.Status))
+
+	return nil
+}
+
+func updateCRStatusFAIL(r *HelmerReconciler, ctx context.Context, req ctrl.Request, err error) error {
+	helmer := &apiv1alpha1.Helmer{}
+	r.Get(ctx, req.NamespacedName, helmer)
+
+	helmer.Status.Status = apiv1alpha1.FAILED
+	helmer.Status.Error = err.Error()
+	r.Status().Update(ctx, helmer)
+
+	return nil
+}
+
+func updateCRField(r *HelmerReconciler, ctx context.Context, field string) error {
 	cr := &unstructured.Unstructured{}
 	cr.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "my.domain",
@@ -118,8 +163,7 @@ func updateCR(r *HelmerReconciler, ctx context.Context) error {
 		return err
 	}
 
-	// Update a specific value
-	dataSpec["operation"] = "done"
+	dataSpec[field] = "done"
 
 	// set the updated spec map back to the resource
 	err = unstructured.SetNestedField(cr.Object, spec, "spec")
@@ -128,9 +172,6 @@ func updateCR(r *HelmerReconciler, ctx context.Context) error {
 	}
 
 	r.Update(ctx, cr)
-
-	log.Log.Info(fmt.Sprintln("Hello this is done"))
-
 	return nil
 }
 
