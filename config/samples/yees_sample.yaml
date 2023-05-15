@@ -10,5 +10,5 @@ metadata:
   name: helmer-sample
 spec:
   chart: yees-0.1.0.tgz
-  releaseName: yees-release1
-  operation: install
+  releaseName: yees-release
+  operation: uninstall

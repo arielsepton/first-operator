@@ -66,7 +66,7 @@ func (r *HelmerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	releaseName := helmer.Spec.ReleaseName
 	operation := helmer.Spec.Operation
 
-	if operation != "done" {
+	if helmer.Status.Status == "" {
 		log.Log.Info(fmt.Sprintln("Hello this is the chart: ", chartPath))
 		log.Log.Info(fmt.Sprintln("Hello this is the operation: ", operation))
 
@@ -77,14 +77,8 @@ func (r *HelmerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			return ctrl.Result{}, err
 		}
 
-		if err = helm.RunOperation(operation, releaseNamespace, releaseName, chart); err != nil {
+		if err = helm.RunOperation1(operation, releaseNamespace, releaseName, chart); err != nil {
 			log.Log.Info(fmt.Sprintln("Hello this is the func: ", "RunOperation"))
-			updateCRStatusFAIL(r, ctx, req, err)
-			return ctrl.Result{}, err
-		}
-
-		if err = updateCRField(r, ctx, "operation"); err != nil {
-			log.Log.Info(fmt.Sprintln("Hello this is the func: ", "updateCRField"))
 			updateCRStatusFAIL(r, ctx, req, err)
 			return ctrl.Result{}, err
 		}
@@ -118,11 +112,6 @@ func updateCRStatusSUCCESS(r *HelmerReconciler, ctx context.Context, req ctrl.Re
 	}
 
 	log.Log.Info(fmt.Sprintln("Hello this is the status: ", helmer.Status.Status))
-
-	// try
-	r.Get(ctx, req.NamespacedName, helmer)
-	log.Log.Info(fmt.Sprintln("Hello this is the status: ", helmer.Status.Status))
-
 	return nil
 }
 
@@ -134,44 +123,6 @@ func updateCRStatusFAIL(r *HelmerReconciler, ctx context.Context, req ctrl.Reque
 	helmer.Status.Error = err.Error()
 	r.Status().Update(ctx, helmer)
 
-	return nil
-}
-
-func updateCRField(r *HelmerReconciler, ctx context.Context, field string) error {
-	cr := &unstructured.Unstructured{}
-	cr.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "my.domain",
-		Version: "v1alpha1",
-		Kind:    "Helmer",
-	})
-
-	cr.SetNamespace("default") // set the namespace of the CR if needed
-	cr.SetName("helmer-sample")
-
-	err := r.Get(ctx, types.NamespacedName{Name: "helmer-sample", Namespace: "default"}, cr)
-	if err != nil {
-		return err
-	}
-
-	spec, _, err := unstructured.NestedFieldNoCopy(cr.Object, "spec")
-	if err != nil {
-		return err
-	}
-
-	dataSpec, ok := spec.(map[string]interface{})
-	if !ok {
-		return err
-	}
-
-	dataSpec[field] = "done"
-
-	// set the updated spec map back to the resource
-	err = unstructured.SetNestedField(cr.Object, spec, "spec")
-	if err != nil {
-		return err
-	}
-
-	r.Update(ctx, cr)
 	return nil
 }
 
