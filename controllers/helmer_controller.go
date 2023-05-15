@@ -20,11 +20,9 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/arielsepton/first-operator/utils/executer"
 	"github.com/arielsepton/first-operator/utils/helm"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -72,13 +70,11 @@ func (r *HelmerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 		chart, err := helm.GetChart(chartPath)
 		if err != nil {
-			log.Log.Info(fmt.Sprintln("Hello this is the func: ", "GetChart"))
 			updateCRStatusFAIL(r, ctx, req, err)
 			return ctrl.Result{}, err
 		}
 
-		if err = helm.RunOperation1(operation, releaseNamespace, releaseName, chart); err != nil {
-			log.Log.Info(fmt.Sprintln("Hello this is the func: ", "RunOperation"))
+		if err = executer.RunOperation(operation, releaseNamespace, releaseName, chart); err != nil {
 			updateCRStatusFAIL(r, ctx, req, err)
 			return ctrl.Result{}, err
 		}

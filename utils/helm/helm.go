@@ -15,37 +15,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type Operation interface {
-	execute(releaseNamespace string, releaseName string, chart *chart.Chart) error
-}
-
-type InstallOperation struct{}
-
-func (i InstallOperation) execute(releaseNamespace string, releaseName string, chart *chart.Chart) error {
-	actionConfig, err := GetActionConfig(releaseNamespace, releaseName)
-	if err != nil {
-		return err
-	}
-
-	Client := action.NewInstall(actionConfig)
-	Client.Namespace = releaseNamespace
-	Client.ReleaseName = releaseName
-
-	values, err := yamlToMap("values.yaml")
-	if err != nil {
-		return err
-	}
-
-	rel, err := Client.Run(chart, values)
-	if err != nil {
-		log.Log.Info(fmt.Sprintln("err: ", err))
-		return err
-	}
-
-	log.Log.Info(fmt.Sprintln("Successfully installed release: ", rel.Name))
-	return nil
-}
-
 func GetChart(path string) (*chart.Chart, error) {
 	chart, err := loader.Load(path)
 	if err != nil {
@@ -68,7 +37,7 @@ func GetActionConfig(releaseNamespace string, releaseName string) (*action.Confi
 	return actionConfig, nil
 }
 
-func yamlToMap(yamlFilePath string) (map[string]interface{}, error) {
+func YamlToMap(yamlFilePath string) (map[string]interface{}, error) {
 	// Read the YAML file into a byte slice
 	yamlData, err := ioutil.ReadFile(yamlFilePath)
 	if err != nil {
