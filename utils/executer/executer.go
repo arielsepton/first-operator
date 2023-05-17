@@ -14,10 +14,17 @@ var operationMap = map[string]operations.Operation{
 }
 
 func RunOperation(operation string, releaseNamespace string, releaseName string, chart *chart.Chart) error {
+	params := operations.PossibleParams{
+		Namespace: releaseNamespace,
+		Name:      releaseName,
+		Chart:     chart,
+	}
+
 	operationFunc, found := operationMap[operation]
 	if !found {
 		return errors.New("unsupported operation")
 	}
+	// operationFunc.SetParams()
 
-	return operationFunc.Execute(releaseNamespace, releaseName, chart)
+	return operationFunc.Execute(params)
 }

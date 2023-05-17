@@ -11,4 +11,4 @@ metadata:
 spec:
   chart: yees-0.1.0.tgz
   releaseName: yees-release
-  operation: install
+  operation: uninstall

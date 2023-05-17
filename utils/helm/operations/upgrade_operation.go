@@ -7,17 +7,19 @@ import (
 )
 
 type UpgradeParams struct {
-	BasicParams
-	Chart *chart.Chart
-	// Additional parameters specific to upgrade operation
+	Namespace string
+	Name      string
+	Chart     *chart.Chart
 }
 
 type UpgradeOperation struct {
 	Params UpgradeParams
 }
 
-func (uo UpgradeOperation) Execute(releaseNamespace string, releaseName string, chart *chart.Chart) error {
-	actionConfig, err := helm.GetActionConfig(releaseNamespace, releaseName)
+func (uo UpgradeOperation) Execute(upgradeParams interface{}) error {
+	params := upgradeParams.(PossibleParams)
+
+	actionConfig, err := helm.GetActionConfig(params.Namespace, params.Name)
 	if err != nil {
 		return err
 	}
@@ -28,7 +30,6 @@ func (uo UpgradeOperation) Execute(releaseNamespace string, releaseName string, 
 		return err
 	}
 
-	_, err = client.Run(releaseName, chart, values)
+	_, err = client.Run(params.Name, params.Chart, values)
 	return err
-
 }

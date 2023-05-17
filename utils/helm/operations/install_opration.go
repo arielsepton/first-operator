@@ -7,30 +7,31 @@ import (
 )
 
 type InstallParams struct {
-	BasicParams
-	Chart *chart.Chart
-	// Additional parameters specific to install operation
+	Namespace string
+	Name      string
+	Chart     *chart.Chart
 }
 
 type InstallOperation struct {
-	Params InstallParams
 }
 
-func (io InstallOperation) Execute(releaseNamespace string, releaseName string, chart *chart.Chart) error {
-	actionConfig, err := helm.GetActionConfig(releaseNamespace, releaseName)
+func (io InstallOperation) Execute(installParams interface{}) error {
+	params := installParams.(PossibleParams)
+
+	actionConfig, err := helm.GetActionConfig(params.Namespace, params.Namespace)
 	if err != nil {
 		return err
 	}
 
 	client := action.NewInstall(actionConfig)
-	client.Namespace = releaseNamespace
-	client.ReleaseName = releaseName
+	client.Namespace = params.Namespace
+	client.ReleaseName = params.Name
 
 	values, err := helm.YamlToMap("values.yaml")
 	if err != nil {
 		return err
 	}
 
-	_, err = client.Run(chart, values)
+	_, err = client.Run(params.Chart, values)
 	return err
 }
